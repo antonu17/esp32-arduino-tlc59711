@@ -5,7 +5,7 @@ SPISettings SPI_SETTINGS(2000000, MSBFIRST, SPI_MODE0);
 TLC59711::TLC59711(uint8_t n)
 {
   numdrivers = n;
-  BCr = BCg = BCb = 0x7F; // default 100% brigthness
+  simpleSetBrightness(127);
   pwmbuffer = (uint16_t *)calloc(2, 12 * n);
 }
 
@@ -50,18 +50,9 @@ void TLC59711::setLED(uint8_t lednum, uint16_t r, uint16_t g,
   setPWM(lednum * 3 + 2, b);
 }
 
-void TLC59711::simpleSetBrightness(uint8_t BC)
+void TLC59711::simpleSetBrightness(uint8_t bc)
 {
-  if (BC > 127)
-  {
-    BC = 127; // maximum possible value since BC can only be 7 bit
-  }
-  else if (BC < 0)
-  {
-    BC = 0;
-  }
-
-  BCr = BCg = BCb = BC;
+  setBrightness(bc, bc, bc);
 }
 
 void TLC59711::setBrightness(uint8_t bcr, uint8_t bcg, uint8_t bcb)
@@ -98,17 +89,12 @@ void TLC59711::setBrightness(uint8_t bcr, uint8_t bcg, uint8_t bcb)
   }
 
   BCb = bcb;
-}
-
-void TLC59711::write()
-{
-  uint32_t command;
 
   // Write command
   command = 0x25;
 
   command <<= 5;
-  // OUTTMG = 1, EXTGCK = 0, TMGRST = 1, DSPRPT = 1, BLANK = 0 -> 0x16
+  // OUTTMG = 1, EXTGCK = 0, TMGRST = 0, DSPRPT = 1, BLANK = 0 -> 0x12
   command |= 0x12;
 
   command <<= 7;
@@ -120,6 +106,10 @@ void TLC59711::write()
   command <<= 7;
   command |= BCr;
 
+}
+
+void TLC59711::write()
+{
   noInterrupts();
   for (uint8_t n = 0; n < numdrivers; n++)
   {
@@ -143,24 +133,6 @@ void TLC59711::write()
 void TLC59711::writeSPI()
 {
   _spi->beginTransaction(SPI_SETTINGS);
-
-  uint32_t command;
-
-  // Write command
-  command = 0x25;
-
-  command <<= 5;
-  // OUTTMG = 1, EXTGCK = 0, TMGRST = 1, DSPRPT = 1, BLANK = 0 -> 0x16
-  command |= 0x16;
-
-  command <<= 7;
-  command |= BCb;
-
-  command <<= 7;
-  command |= BCg;
-
-  command <<= 7;
-  command |= BCr;
 
   noInterrupts();
   for (uint8_t n = 0; n < numdrivers; n++)
