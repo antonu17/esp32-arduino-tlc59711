@@ -105,7 +105,21 @@ void TLC59711::setBrightness(uint8_t bcr, uint8_t bcg, uint8_t bcb)
 
   command <<= 7;
   command |= BCr;
+}
 
+void bitBang(uint8_t c, uint8_t d, uint8_t v)
+{
+  uint8_t b = 0x80;
+
+  for (; b != 0; b >>= 1)
+  {
+    digitalWrite(c, LOW);
+    if (d & b)
+      digitalWrite(d, HIGH);
+    else
+      digitalWrite(d, LOW);
+    digitalWrite(c, HIGH);
+  }
 }
 
 void TLC59711::write()
@@ -113,17 +127,17 @@ void TLC59711::write()
   noInterrupts();
   for (uint8_t n = 0; n < numdrivers; n++)
   {
-    shiftOut(_d, _c, MSBFIRST, command >> 24);
-    shiftOut(_d, _c, MSBFIRST, command >> 16);
-    shiftOut(_d, _c, MSBFIRST, command >> 8);
-    shiftOut(_d, _c, MSBFIRST, command);
+    bitBang(_d, _c, command >> 24);
+    bitBang(_d, _c, command >> 16);
+    bitBang(_d, _c, command >> 8);
+    bitBang(_d, _c, command);
 
     // 12 channels per TLC59711
     for (int8_t c = 11; c >= 0; c--)
     {
       // 16 bits per channel, send MSB first
-      shiftOut(_d, _c, MSBFIRST, pwmbuffer[n * 12 + c] >> 8);
-      shiftOut(_d, _c, MSBFIRST, pwmbuffer[n * 12 + c]);
+      bitBang(_d, _c, pwmbuffer[n * 12 + c] >> 8);
+      bitBang(_d, _c, pwmbuffer[n * 12 + c]);
     }
   }
   delayMicroseconds(4);
