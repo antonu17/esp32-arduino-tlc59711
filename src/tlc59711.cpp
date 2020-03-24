@@ -36,7 +36,7 @@ void TLC59711::setPWM(uint8_t chan, uint16_t pwm)
 
 void TLC59711::resetLeds()
 {
-  for (uint8_t n = 0; n < 12*numdrivers; n++)
+  for (uint8_t n = 0; n < 12 * numdrivers; n++)
   {
     pwmbuffer[n] = 0;
   }
